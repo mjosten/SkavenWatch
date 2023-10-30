@@ -15,5 +15,5 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build the Docker image
-      working_directory: ./skaven_watch
+      working-directory: ./skaven_watch
       run: docker build --tag skaven_watch:$(date +%s) . 
