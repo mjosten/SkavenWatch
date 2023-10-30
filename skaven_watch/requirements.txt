@@ -1,0 +1,7 @@
+html5lib
+lxml
+requests
+beautifulsoup4
+discord.py
+python-dotenv
+pymongo

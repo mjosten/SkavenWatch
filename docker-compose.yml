@@ -1,0 +1,26 @@
+version: '3'
+services:
+  mongodb:
+    image: mongo
+    container_name: skaven-mongodb
+    env_file:
+      - .env
+    ports:
+      - "27017:27017"
+    networks:
+      - skaven-net
+
+  skaven-watch:
+    build: ./skaven_watch
+    container_name: skaven-watch
+    networks:
+      - skaven-net
+    depends_on:
+      - mongodb
+    env_file:
+      - .env
+    environment:
+      MONGO_HOST: skaven-mongodb
+      
+networks:
+  skaven-net:

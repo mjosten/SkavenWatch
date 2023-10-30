@@ -1,0 +1,17 @@
+name: dis_bot
+channels:
+  - defaults
+dependencies:
+  - python=3.8
+  - html5lib
+  - lxml
+  - requests
+  - beautifulsoup4
+  - discord.py
+  - python-dotenv
+  - pymongo
+  - pip
+
+
+# create env using 
+# `conda env create -f environment.yml`
