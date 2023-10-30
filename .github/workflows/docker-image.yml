@@ -15,4 +15,5 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build the Docker image
-      run: docker build ./skaven_watch --file Dockerfile --tag skaven_watch:$(date +%s)
+      working_directory: ./skaven_watch
+      run: docker build --tag skaven_watch:$(date +%s) . 
