@@ -29,6 +29,7 @@ Steps to Run
 @author: Michael Josten
 """
 #imports
+from datetime import date, timedelta, datetime
 from dotenv import load_dotenv
 from typing import Any, Dict, List, Union
 import pymongo
@@ -53,10 +54,48 @@ client = pymongo.MongoClient(f"mongodb://{MONGO_USERNAME}:{MONGO_PASSWORD}@{MONG
 class SkavenDB():
     def __init__(self, client: pymongo.MongoClient = client, 
                  database_name: str = 'skaven_watch',
-                 collection_name: str = 'skaven_collection') -> None:
+                 collection_name: str = 'skaven_collection',
+                 date_check_collection: str = "date_check_collection") -> None:
+        
         self.client = client
         self.db = self.client[database_name]
-        self.collection = self.db[collection_name]
+        self.collection = self.db[collection_name]        
+        self.date_check_collection = self.db[date_check_collection]
+        
+        if not self.get_date_check():  # initialize date_check value if not exist
+            self.update_date_check(str((datetime.now() - timedelta(1)).date()))  # default to yesterday
+        
+        
+    def update_date_check(self, 
+                          date_checked: str = str(date.today()), 
+                          article_date: str = "") -> None:
+        """
+        Method that updates the date_checked in database
+        
+        :param date_checked: str of isoformat date 
+        :param article_date: str of isoformat date of article
+        """
+        check_dict = {
+            'id' : 1,
+            'date_checked' : date_checked,
+            'article_date' : article_date
+        }
+        self.date_check_collection.update_one(filter={'id': check_dict['id']},
+                                              update={'$set': check_dict},
+                                              upsert=True)
+        
+    def get_date_check(self) -> Union[Dict[str, str], None]:
+        """
+        Method that gets the date_checked from the database
+        
+        :return:
+        {
+            'date_checked': str in date isoformat,
+            'article_date': str in date isoformat
+        }
+        """
+        return self.date_check_collection.find_one({'id': 1})
+        
         
     def change_db(self, db_name: str = 'skaven_watch', 
                   collection_name: str = 'skaven_collection'):
@@ -70,7 +109,7 @@ class SkavenDB():
         :param skaven_dict: 
         dict{
             'url': str
-            'date': date,
+            'date': str,
             'lists': [{
                 'player': str,
                 'list': str

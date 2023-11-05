@@ -298,7 +298,7 @@ def _format_skaven_message(skaven_dict: Dict[str, Any]):
     return message
         
         
-def get_skaven_message(url) -> str:
+def get_skaven_message_from_url(url) -> str:
     """
     Function that creates a skaven list message from the url of the article
     :param url: str
@@ -320,34 +320,71 @@ def get_current_skaven_message(debug=False) -> Union[str, None]:
     
     :param debug: bool if should return most recent article 
                 instead of no article if there is no article today
-    :return: str message
+    :return: str message or None
     """
-    logger.info("getting current skaven message")
-    message = None
-    # check if there is todays skaven article in the database
+    # check if there is an article in the db that came out today
+    logger.info("getting current skaven list")
     logger.info("checking db...")
+    today_date = date.today()
     skaven_dict = skaven_db.find_most_recent_list()
-
-    # if yes, then get the dictionary from the database and generate message
-    if skaven_dict:
-        logger.info("Found current article in db")
-        
-    # if no, then get the most recent article from goonhammer
-    else:
-        logger.info("no current article found in db, collecting from goonhammer")
-        current_article_url = get_current_article_link()
-        skaven_dict = _compile_skaven_results(current_article_url)
-        
+    message = None
     
-    # check if the date today is equal to the article's date
-    article_date = datetime.fromisoformat(skaven_dict['date']).date()
-    if (article_date == datetime.now().date()) or debug:
-        logger.info("Found article today: processing report")
-        message = _format_skaven_message(skaven_dict)
+    if skaven_dict:  # there exists a list in the db
+        logger.info(f"found list in db: {skaven_dict['date']}")
+        # check if the date of skaven_dict is today
+        db_date = date.fromisoformat(skaven_dict['date'])
+        if db_date == today_date:
+            logger.info("DB list from today")
+            # list is from today, can return message
+            message =  _format_skaven_message(skaven_dict)
         
-    # if there is no article today
-    else:
-        logger.info(f"No article for today")
+        # DB list is not from today
+        # Check the date_checked object in the db to see if we need to query goonhammer
+        else:
+            date_checked = skaven_db.get_date_check()
+            # check if goonhammer was already checked for a new article
+            if (date_checked and (date.fromisoformat(date_checked['date_checked']) == today_date)) and not debug:
+                # we already checked goonhammer and there is no new article so don't message anything
+                logger.info(f"Already checked Goonhammer today, no new list: {str(today_date)}")
+                message = None
+            
+            # we did not check goonhammer today yet for a new article
+            else:
+                # check goonhammer for new article
+                logger.info("Checking goonhammer for new article")
+                current_article_url = get_current_article_link()
+                current_article_date = get_article_date(current_article_url)
+                
+                if (current_article_date == today_date) or debug:
+                    # if article date is today, then we have a new article
+                    # update db and send message
+                    skaven_dict = _compile_skaven_results(current_article_url)
+                    logger.info(f"Found new article from goonhammer, updating DB: {skaven_dict['url']}")
+                    skaven_db.insert_skaven_dict(skaven_dict)
+                    message = _format_skaven_message(skaven_dict)
+                    
+                else:
+                    # no new article, don't do anything
+                    logger.info("No new goonhammer article, updating checked status")
+                    message = None
+                 
+                # update date_checked   
+                skaven_db.update_date_check(str(today_date), str(current_article_date))
+                
+    else:  # there is no list in the DB
+        logger.info("No lists in DB, querying goonhammer for recent list")
+        # query goonhammer for a list and input into DB
+        current_article_url = get_current_article_link()
+        skaven_dict = _compile_skaven_results(current_article_url)  # this function adds to DB
+        
+        # check if it occured today and if yes then can message
+        if (date.fromisoformat(skaven_dict['date']) == today_date) or debug:
+            logger.info("Found article from today, messaging")
+            message = _format_skaven_message(skaven_dict)
+        else:
+            # don't message
+            logger.info("No list from today, no message")
+            message = None
             
     return message  # str or None
 
@@ -372,7 +409,7 @@ def get_all_skaven_message(time_limit: timedelta = timedelta(weeks=9)) -> List[s
         logger.info(f"article_date: {article_date}")
         # check if article is less than time_limit
         if article_date >= threshold_date:
-            result.append(get_skaven_message(url))
+            result.append(get_skaven_message_from_url(url))
             time.sleep(2)  # need to sleep so we are not scraping too fast
         else:
             break  # we get the articles in order on the website

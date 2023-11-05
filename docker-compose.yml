@@ -21,6 +21,8 @@ services:
       - .env
     environment:
       MONGO_HOST: skaven-mongodb
+    volumes:
+      - ./skaven_watch/logs:/skaven_watch/logs
       
 networks:
   skaven-net:
