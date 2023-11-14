@@ -293,7 +293,7 @@ def _format_skaven_message(skaven_dict: Dict[str, Any]):
     
     # if no skaven at all   
     elif not (skaven_lists and best_of_rest):
-        message = f"No Skaven Lists Today :("
+        message += f"No Skaven Lists Today :("
         
     return message
         
