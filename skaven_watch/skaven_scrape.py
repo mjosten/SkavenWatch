@@ -281,7 +281,7 @@ def _format_skaven_message(skaven_dict: Dict[str, Any]):
     
     # add the skaven lists
     if skaven_lists:
-        message += f"Skaven Lists:\n"
+        message += f"Skaven Lists:\n\n"
         for i, d in enumerate(skaven_lists):
             message += f"List {i+1} - {d['name']}\n{d['list']}\n"
         
