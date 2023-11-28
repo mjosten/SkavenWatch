@@ -23,7 +23,7 @@ skaven_db = SkavenDB()
 # Constants
 URL = 'https://www.goonhammer.com/category/columns/aos-competitive-innovations/'
 URL_PATTERN = re.compile(r".*competitive-innovations.*", re.IGNORECASE)
-RAT_PATTERN = re.compile(r".*skaven.*", re.IGNORECASE)
+RAT_PATTERN = re.compile(r".*skaven(?!brew).*", re.IGNORECASE)
 STOP_PATTERN = re.compile(r".*total.*", re.IGNORECASE)
 
 
@@ -279,7 +279,7 @@ def _format_skaven_message(skaven_dict: Dict[str, Any]):
     message = f"{skaven_dict['date']} Skaven Results:\n"
     message += f"{skaven_dict['url']}\n"
     
-    # add 
+    # add the skaven lists
     if skaven_lists:
         message += f"Skaven Lists:\n"
         for i, d in enumerate(skaven_lists):
@@ -419,7 +419,18 @@ def get_all_skaven_message(time_limit: timedelta = timedelta(weeks=9)) -> List[s
         
     
 if __name__ == "__main__":
-    pass
+    
+    url = 'https://www.goonhammer.com/competitive-innovations-in-the-mortal-realms-world-championships-of-warhammer-war-in-the-heartlands/'
+    
+    result = _compile_skaven_results(url, add_to_db=False)
+    message = _format_skaven_message(result)
+    
+    from pprint import pprint
+
+    pprint(result)
+    print("--------------")
+    print(message)
+    
     # simple test
     # result = get_current_article_link()
     # if result:
