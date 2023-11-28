@@ -41,7 +41,7 @@ load_dotenv()
 
 #constants
 
-MONGO_HOST = os.getenv("MONGO_HOST")
+MONGO_HOST = os.getenv("MONGO_HOST", 'localhost')  # can typically be 'localhost' when testing locally
 MONGO_PORT = 27017
 MONGO_USERNAME = os.getenv("MONGO_INITDB_ROOT_USERNAME")
 MONGO_PASSWORD = os.getenv("MONGO_INITDB_ROOT_PASSWORD")
