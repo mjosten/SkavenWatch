@@ -24,6 +24,7 @@ skaven_db = SkavenDB()
 URL = 'https://www.goonhammer.com/category/columns/aos-competitive-innovations/'
 URL_PATTERN = re.compile(r".*competitive-innovations.*", re.IGNORECASE)
 RAT_PATTERN = re.compile(r".*skaven(?!brew).*", re.IGNORECASE)
+IGNORE_PATTERN = re.compile(r".*skaven victory.*", re.IGNORECASE)
 STOP_PATTERN = re.compile(r".*total.*", re.IGNORECASE)
 
 
@@ -195,9 +196,9 @@ def _compile_skaven_results(
         for ss in skaven_strings:
             if ss.parent.name == 'h2':  # hopefully this is the player name of the list
                 name_list.append(ss)
-            elif ss.parent.name == 'p' and len(ss.split(' ')) <= 12:  # hopefully the content of the list, dont want large paragraphs with the word skaven
+            elif (ss.parent.name == 'p' or ss.parent.name == 'strong') and not IGNORE_PATTERN.match(ss) and len(ss.split(' ')) <= 12:  # hopefully the content of the list, dont want large paragraphs with the word skaven
                 list_list.append(_get_skaven_list(ss.parent, stop_pattern))
-                
+                        
         # go through each list and try to get a name
         if len(name_list) > 0 and len(name_list) == len(list_list):  # if the article is of type 1: Ie, has each list separate, there will be a h2 with the name
             for n, l in zip(name_list, list_list):
@@ -292,7 +293,7 @@ def _format_skaven_message(skaven_dict: Dict[str, Any]):
             message += f"L{i+1} - {el}"
     
     # if no skaven at all   
-    elif not (skaven_lists and best_of_rest):
+    elif not (skaven_lists or best_of_rest):
         message += f"No Skaven Lists Today :("
         
     return message
@@ -420,7 +421,8 @@ def get_all_skaven_message(time_limit: timedelta = timedelta(weeks=9)) -> List[s
     
 if __name__ == "__main__":
     
-    url = 'https://www.goonhammer.com/competitive-innovations-in-the-mortal-realms-world-championships-of-warhammer-war-in-the-heartlands/'
+    # url = 'https://www.goonhammer.com/competitive-innovations-in-the-mortal-realms-world-championships-of-warhammer-war-in-the-heartlands/'
+    url = 'https://www.goonhammer.com/competitive-innovations-in-the-mortal-realms-shipping-up-to-boston/'
     
     result = _compile_skaven_results(url, add_to_db=False)
     message = _format_skaven_message(result)
